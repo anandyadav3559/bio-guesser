@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+dotenv
+snowflake-connector-python
+requests
+python-geohash
+datetime
