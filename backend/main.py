@@ -3,15 +3,17 @@ from dotenv import load_dotenv
 import snowflake.connector
 import uvicorn
 import os
+import random
 from services.snowflake import SnowflakeService
-
+from scoring.get_score import score_guess
 load_dotenv()
+from fastapi.middleware.cors import CORSMiddleware
 
 from contextlib import asynccontextmanager
 
 ids = []
 global_service = None
-
+locations = []
 @asynccontextmanager
 async def lifespan(app: fastapi.FastAPI):
     global ids
@@ -47,10 +49,47 @@ async def lifespan(app: fastapi.FastAPI):
 
 app = fastapi.FastAPI(lifespan=lifespan)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Next.js dev URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.get("/")
-def read_root():
-    return {"ids": ids}
+
+@app.get("/get_score")
+def get_score(lat: float, lng: float):
+    global locations
+    if not locations:
+        return {"error": "Game not started or no location data"}
+    
+    # Transform locations object to list of tuples [(lat, lon)]
+    # locations.locations is [{'lat': ..., 'lon': ...}]
+    sightings = [(loc['lat'], loc['lon']) for loc in locations.locations]
+    
+    score = score_guess(lat, lng, sightings)
+    
+    # Add all sightings to the response for visualization
+    score["all_sightings"] = [{"lat": lat, "lng": lon} for lat, lon in sightings]
+    
+    return score
+
+
+
+@app.get("/start_game")
+def start_game():
+    global locations
+    if not ids:
+        return {"error": "No IDs available"}
+    
+    random_id = random.choice(ids)
+    
+    # Use existing logic to get animal by ID
+    service = global_service if global_service else SnowflakeService()
+    animal = service.get_animal_by_id(random_id)
+    locations = service.get_location(random_id)
+    return animal.to_dict()
 
 
 @app.get("/animal/{id}")
@@ -63,7 +102,6 @@ def get_animal_by_id(id: int):
 @app.get("/location/{id}")
 def get_location(id: int):
     service = global_service if global_service else SnowflakeService()
-    location = service.get_location(id)
     return location.to_dict()
 
 def db_connection():
