@@ -157,10 +157,7 @@ npm run dev
 
 Frontend running at `http://localhost:3000`
 
-### API Documentation
 
-- **Swagger UI**: `http://127.0.0.1:8000/docs`
-- **ReDoc**: `http://127.0.0.1:8000/redoc`
 
 ### API Endpoints Overview
 
