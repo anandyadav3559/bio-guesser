@@ -51,7 +51,7 @@ app = fastapi.FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Next.js dev URL
+    allow_origins=["https://bio-guesser.vercel.app"],  # Next.js dev URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -134,4 +134,5 @@ if __name__ == "__main__":
     
     # Run uvicorn
     # Note: When running programmatically like this, lifespan events *should* fire.
+
     uvicorn.run(app, host=ip, port=port)
