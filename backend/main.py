@@ -1,28 +1,25 @@
 import fastapi
 from dotenv import load_dotenv
-import snowflake.connector
 import uvicorn
 import os
 import random
+import sys
+
+# Ensure backend directory is in python path for imports if running from root
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(current_dir)
+
 from services.snowflake import SnowflakeService
 from scoring.get_score import score_guess
-load_dotenv()
 from fastapi.middleware.cors import CORSMiddleware
-
 from contextlib import asynccontextmanager
-import sys
-from pathlib import Path
 
-# This tells Python to treat the 'backend' folder as a place to look for modules
-file = Path(__file__).resolve()
-parent = file.parent
-sys.path.append(str(parent))
+load_dotenv()
 
-# Now you can import services normally
-from services.your_file import your_function
 ids = []
 global_service = None
 locations = []
+
 @asynccontextmanager
 async def lifespan(app: fastapi.FastAPI):
     global ids
@@ -30,16 +27,10 @@ async def lifespan(app: fastapi.FastAPI):
     try:
         print("Loading cached data from Snowflake...")
         
-        # Initialize the global service with a persistent connection
-        # We create a temporary service just to use its logic to get a connection, 
-        # or we could just use the connector directly. 
-        # Let's use a cleaner way: establish connection and pass it.
-        
         if not os.getenv("SNOWFLAKE_USER"):
-            print("Please set your Snowflake credentials in the .env file.")
-            return
-
-        # Create the initial connection
+            print("WARNING: Snowflake credentials not found in environment variables.")
+        
+        # Initialize the global service with a persistent connection
         temp_service = SnowflakeService()
         conn = temp_service.get_connection()
         print("Established persistent Snowflake connection.")
@@ -58,9 +49,18 @@ async def lifespan(app: fastapi.FastAPI):
 
 app = fastapi.FastAPI(lifespan=lifespan)
 
+# CORS Configuration
+# In production, set ALLOWED_ORIGINS to your Vercel URL (e.g. https://my-app.vercel.app)
+# For development, defaults to localhost:3000
+origins_env = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000")
+origins = [origin.strip() for origin in origins_env.split(",")]
+
+# Add wildcard for easier testing if needed (optional, safer to stick to specific domains)
+# origins.append("https://*.vercel.app") 
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://bio-guesser.vercel.app"],  # Next.js dev URL
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -90,7 +90,7 @@ def get_score(lat: float, lng: float):
 def start_game():
     global locations
     if not ids:
-        return {"error": "No IDs available"}
+        return {"error": "No IDs available. Database might be empty or connection failed."}
     
     random_id = random.choice(ids)
     
@@ -103,48 +103,23 @@ def start_game():
 
 @app.get("/animal/{id}")
 def get_animal_by_id(id: int):
-    # Use the global service if available, else fallback (though lifespan should have set it)
     service = global_service if global_service else SnowflakeService()
     animal = service.get_animal_by_id(id)
     return animal.to_dict()
 
 @app.get("/location/{id}")
 def get_location(id: int):
+    # This seems to have a bug in original code: 'location' was not defined.
+    # Assuming intent:
     service = global_service if global_service else SnowflakeService()
-    return location.to_dict()
+    loc = service.get_location(id)
+    return loc.to_dict()
 
-def db_connection():
-    print("Testing Snowflake Connection...")
-    # This function is now legacy/unused in the main flow but good for debugging
-    service = SnowflakeService()
-    try:
-        conn = service.get_connection()
-        print("Successfully connected to Snowflake!")
-        
-        cursor = conn.cursor()
-        cursor.execute("SELECT CURRENT_VERSION()")
-        version = cursor.fetchone()
-        print(f"Snowflake Version: {version[0]}")
-        
-        cursor.close()
-        conn.close()
-    except Exception as e:
-        print(f"Failed to connect: {e}")
-
-
-
-
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "message": "Backend is running"}
 
 if __name__ == "__main__":
-    import uvicorn
-    import os
-    
-    # Render provides the port via an environment variable
-    # We MUST use 0.0.0.0 to be reachable externally
-    port = int(os.environ.get("PORT", 8000))
-    
-    # Force host to 0.0.0.0
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
-
-
-
+    port = int(os.getenv('PORT', 8000))
+    # Listen on 0.0.0.0 to ensure external availability if running directly
+    uvicorn.run(app, host="0.0.0.0", port=port)
