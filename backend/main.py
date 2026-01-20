@@ -130,9 +130,10 @@ if __name__ == "__main__":
     # Optional: Run a quick connection test before starting server
         
     port = int(os.getenv('PORT', 8000))
-    ip = os.getenv('IP', '127.0.0.1') # Defaulting to localhost if not set
+    ip = os.getenv('IP', '0.0.0.0') # Defaulting to localhost if not set
     
     # Run uvicorn
     # Note: When running programmatically like this, lifespan events *should* fire.
 
     uvicorn.run(app, host=ip, port=port)
+
