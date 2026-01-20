@@ -127,13 +127,14 @@ def db_connection():
 
 
 if __name__ == "__main__":
-    # Optional: Run a quick connection test before starting server
-        
-    port = int(os.getenv('PORT', 8000))
-    ip = os.getenv('IP', '0.0.0.0') # Defaulting to localhost if not set
+    import uvicorn
+    import os
     
-    # Run uvicorn
-    # Note: When running programmatically like this, lifespan events *should* fire.
+    # Render provides the port via an environment variable
+    # We MUST use 0.0.0.0 to be reachable externally
+    port = int(os.environ.get("PORT", 8000))
+    
+    # Force host to 0.0.0.0
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
 
-    uvicorn.run(app, host=ip, port=port)
 
