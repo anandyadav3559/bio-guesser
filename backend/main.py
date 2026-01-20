@@ -10,7 +10,16 @@ load_dotenv()
 from fastapi.middleware.cors import CORSMiddleware
 
 from contextlib import asynccontextmanager
+import sys
+from pathlib import Path
 
+# This tells Python to treat the 'backend' folder as a place to look for modules
+file = Path(__file__).resolve()
+parent = file.parent
+sys.path.append(str(parent))
+
+# Now you can import services normally
+from services.your_file import your_function
 ids = []
 global_service = None
 locations = []
@@ -136,5 +145,6 @@ if __name__ == "__main__":
     
     # Force host to 0.0.0.0
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
+
 
 
