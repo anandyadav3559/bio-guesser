@@ -1,4 +1,3 @@
-<img width="1536" height="1024" alt="ChatGPT Image Jan 21, 2026, 11_38_56 AM" src="https://github.com/user-attachments/assets/9001d3d8-6e5e-4fe3-a934-d442285d405d" /># Bio-Geo-Guesser
 Live-Link : https://bio-guesser.vercel.app/
 Bio-Geo-Guesser is a web application that combines biological data with geolocation features to create an interactive guessing game. It leverages a robust architecture with a **FastAPI** backend for high-performance data serving, a **Next.js** frontend for a dynamic user experience, and **Snowflake** for scalable data storage.
 
