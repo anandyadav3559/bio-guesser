@@ -2,7 +2,11 @@
 Live-Link : https://bio-guesser.vercel.app/
 Bio-Geo-Guesser is a web application that combines biological data with geolocation features to create an interactive guessing game. It leverages a robust architecture with a **FastAPI** backend for high-performance data serving, a **Next.js** frontend for a dynamic user experience, and **Snowflake** for scalable data storage.
 
+
+https://github.com/user-attachments/assets/ed58239d-e2cd-40cd-a27b-26d2d7b80deb
+
 ## Features
+
 
 - **Interactive Frontend**: Built with Next.js and TailwindCSS for a responsive and modern UI.
 - **Geospatial Visualization**: Integrated Leaflet maps to visualize animal locations.
